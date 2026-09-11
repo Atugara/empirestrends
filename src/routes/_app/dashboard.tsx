@@ -59,7 +59,7 @@ function DashboardPage() {
           <h1 className="font-display text-4xl text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Trending news in. Funny posts out.</p>
         </div>
-        <Button onClick={() => runMutation.mutate()} disabled={runMutation.isPending} className="gap-2">
+        <Button onClick={() => runMutation.mutate({})} disabled={runMutation.isPending} className="gap-2">
           {runMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           Run pipeline now
         </Button>

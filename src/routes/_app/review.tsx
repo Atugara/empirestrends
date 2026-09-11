@@ -44,7 +44,7 @@ function ReviewPage() {
 
   const { data: drafts = [], isLoading } = useQuery({
     queryKey: ["drafts", activeTab],
-    queryFn: () => fetchDrafts({ status: activeTab as any }),
+    queryFn: () => fetchDrafts({ data: { status: activeTab as any } }),
   });
 
   const updateMutation = useMutation({
@@ -96,8 +96,8 @@ function ReviewPage() {
                 <DraftCard
                   key={draft.id}
                   draft={draft}
-                  onUpdate={(patch) => updateMutation.mutate({ id: draft.id, ...patch })}
-                  onRegenerate={() => generateMutation.mutate({ topicId: draft.topic_id })}
+              onUpdate={(patch) => updateMutation.mutate({ data: { id: draft.id, ...patch } })}
+              onRegenerate={() => generateMutation.mutate({ data: { topicId: draft.topic_id } })}
                   isPending={updateMutation.isPending || generateMutation.isPending}
                 />
               ))}

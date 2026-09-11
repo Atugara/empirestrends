@@ -69,7 +69,7 @@ function TrendsPage() {
           <h1 className="font-display text-4xl text-foreground">Trends</h1>
           <p className="text-sm text-muted-foreground">Discovered stories waiting to become posts.</p>
         </div>
-        <Button onClick={() => discoverMutation.mutate()} disabled={discoverMutation.isPending} className="gap-2">
+        <Button onClick={() => discoverMutation.mutate({})} disabled={discoverMutation.isPending} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${discoverMutation.isPending ? "animate-spin" : ""}`} />
           Refresh trends
         </Button>
@@ -112,7 +112,7 @@ function TrendsPage() {
                     size="sm"
                     variant={topic.generated ? "outline" : "default"}
                     disabled={generateMutation.isPending}
-                    onClick={() => generateMutation.mutate({ topicId: topic.id })}
+                    onClick={() => generateMutation.mutate({ data: { topicId: topic.id } })}
                     className="gap-1"
                   >
                     <Wand2 className="h-3.5 w-3.5" />
