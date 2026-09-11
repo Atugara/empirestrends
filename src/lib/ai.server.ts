@@ -31,21 +31,36 @@ const SCHEMA = {
   required: ["twitter", "linkedin", "facebook", "video_script", "hashtags"],
 } as const;
 
-function buildPrompt(input: {
+export type StyleInput = {
   title: string;
   summary: string;
   category: string;
   humorLevel: number;
-}): string {
+  tone?: string;
+  postLength?: string;
+  styleNotes?: string;
+};
+
+const LENGTH_RULES: Record<string, string> = {
+  short: "Keep every post very short: one or two sentences max, twitter under 140 characters.",
+  medium: "Medium length: twitter under 240 characters, linkedin 2-3 short paragraphs.",
+  long: "Fuller storytelling: twitter up to 270 characters, linkedin 4 short paragraphs with a story arc.",
+};
+
+function buildPrompt(input: StyleInput): string {
+  const tone = input.tone ?? "witty";
+  const lengthRule = LENGTH_RULES[input.postLength ?? "medium"] ?? LENGTH_RULES["medium"];
   return [
     `Trending story (${input.category}): ${input.title}`,
     input.summary ? `Context: ${input.summary}` : "",
     "",
-    `Write social content about this story. Comedy dial: ${input.humorLevel}/10 — punchy, surprising, quotable jokes.`,
+    `Write social content about this story. Voice/tone: ${tone}. Comedy dial: ${input.humorLevel}/10 — punchy, surprising, quotable jokes.`,
+    lengthRule,
+    input.styleNotes ? `Extra style notes from the author (follow these closely): ${input.styleNotes}` : "",
     "Rules:",
-    "- twitter: under 260 characters, one killer joke or hot take, no link.",
-    "- linkedin: 3 short paragraphs, funny but workplace-safe, ends with a question.",
-    "- facebook: 2-4 sentences, conversational and shareable.",
+    "- twitter: one killer joke or hot take, no link.",
+    "- linkedin: funny but workplace-safe, ends with a question.",
+    "- facebook: conversational and shareable.",
     "- video_script: a 20-30 second vertical video script with HOOK, 3 BEATS and CTA on separate lines.",
     "- hashtags: 4-6 short tags without the # symbol.",
     "Never mock victims, tragedy, ethnicity, religion or disability. On politics, joke about the absurdity of the situation, never insult voters or groups. No slurs, no misinformation, no fabricated quotes presented as real.",
@@ -54,12 +69,8 @@ function buildPrompt(input: {
     .join("\n");
 }
 
-export async function generateBundle(input: {
-  title: string;
-  summary: string;
-  category: string;
-  humorLevel: number;
-}): Promise<GeneratedBundle> {
+export async function generateBundle(input: StyleInput): Promise<GeneratedBundle> {
+
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new GatewayError(401, "AI is not configured for this app.");
 

@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppConnectionsRouteImport } from './routes/_app/connections'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppPublishedRouteImport } from './routes/_app/published'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppScheduleRouteImport } from './routes/_app/schedule'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppStyleGuideRouteImport } from './routes/_app/style-guide'
 import { Route as AppTrendsRouteImport } from './routes/_app/trends'
 import { Route as ApiPublicRunPipelineRouteImport } from './routes/api/public/run-pipeline'
 
@@ -33,6 +35,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppConnectionsRoute = AppConnectionsRouteImport.update({
+  id: '/connections',
+  path: '/connections',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
@@ -59,6 +66,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppStyleGuideRoute = AppStyleGuideRouteImport.update({
+  id: '/style-guide',
+  path: '/style-guide',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTrendsRoute = AppTrendsRouteImport.update({
   id: '/trends',
   path: '/trends',
@@ -73,22 +85,26 @@ const ApiPublicRunPipelineRoute = ApiPublicRunPipelineRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/connections': typeof AppConnectionsRoute
   '/dashboard': typeof AppDashboardRoute
   '/published': typeof AppPublishedRoute
   '/review': typeof AppReviewRoute
   '/schedule': typeof AppScheduleRoute
   '/settings': typeof AppSettingsRoute
+  '/style-guide': typeof AppStyleGuideRoute
   '/trends': typeof AppTrendsRoute
   '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/connections': typeof AppConnectionsRoute
   '/dashboard': typeof AppDashboardRoute
   '/published': typeof AppPublishedRoute
   '/review': typeof AppReviewRoute
   '/schedule': typeof AppScheduleRoute
   '/settings': typeof AppSettingsRoute
+  '/style-guide': typeof AppStyleGuideRoute
   '/trends': typeof AppTrendsRoute
   '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
@@ -97,11 +113,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_app/connections': typeof AppConnectionsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/published': typeof AppPublishedRoute
   '/_app/review': typeof AppReviewRoute
   '/_app/schedule': typeof AppScheduleRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/style-guide': typeof AppStyleGuideRoute
   '/_app/trends': typeof AppTrendsRoute
   '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
@@ -110,22 +128,26 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/connections'
     | '/dashboard'
     | '/published'
     | '/review'
     | '/schedule'
     | '/settings'
+    | '/style-guide'
     | '/trends'
     | '/api/public/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/connections'
     | '/dashboard'
     | '/published'
     | '/review'
     | '/schedule'
     | '/settings'
+    | '/style-guide'
     | '/trends'
     | '/api/public/run-pipeline'
   id:
@@ -133,11 +155,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/auth'
+    | '/_app/connections'
     | '/_app/dashboard'
     | '/_app/published'
     | '/_app/review'
     | '/_app/schedule'
     | '/_app/settings'
+    | '/_app/style-guide'
     | '/_app/trends'
     | '/api/public/run-pipeline'
   fileRoutesById: FileRoutesById
@@ -171,6 +195,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/connections': {
+      id: '/_app/connections'
+      path: '/connections'
+      fullPath: '/connections'
+      preLoaderRoute: typeof AppConnectionsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
       id: '/_app/dashboard'
@@ -207,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/style-guide': {
+      id: '/_app/style-guide'
+      path: '/style-guide'
+      fullPath: '/style-guide'
+      preLoaderRoute: typeof AppStyleGuideRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/trends': {
       id: '/_app/trends'
       path: '/trends'
@@ -225,20 +263,24 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppConnectionsRoute: typeof AppConnectionsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppPublishedRoute: typeof AppPublishedRoute
   AppReviewRoute: typeof AppReviewRoute
   AppScheduleRoute: typeof AppScheduleRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppStyleGuideRoute: typeof AppStyleGuideRoute
   AppTrendsRoute: typeof AppTrendsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppConnectionsRoute: AppConnectionsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppPublishedRoute: AppPublishedRoute,
   AppReviewRoute: AppReviewRoute,
   AppScheduleRoute: AppScheduleRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppStyleGuideRoute: AppStyleGuideRoute,
   AppTrendsRoute: AppTrendsRoute,
 }
 

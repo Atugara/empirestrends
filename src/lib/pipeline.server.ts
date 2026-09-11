@@ -98,6 +98,10 @@ export async function generateForTopic(
     summary: topic.summary,
     category: topic.category,
     humorLevel: settings.humor_level,
+    tone: settings.tone,
+    postLength: settings.post_length,
+    styleNotes: settings.style_notes,
+
   });
 
   const rows = [

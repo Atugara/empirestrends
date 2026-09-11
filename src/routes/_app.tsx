@@ -9,6 +9,9 @@ import {
   Settings,
   LogOut,
   Flame,
+  Palette,
+  Link2,
+
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -27,8 +30,11 @@ const nav = [
   { to: "/review", label: "Review", icon: ClipboardCheck },
   { to: "/schedule", label: "Schedule", icon: CalendarClock },
   { to: "/published", label: "Published", icon: CheckCircle },
+  { to: "/style-guide", label: "Style guide", icon: Palette },
+  { to: "/connections", label: "Connections", icon: Link2 },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
+
 
 function AppLayout() {
   const { session, loading, signOut } = useAuth();

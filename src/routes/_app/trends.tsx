@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 import { getTopics, runDiscovery, generateDrafts } from "@/lib/app.functions";
-import { AVAILABLE_CATEGORIES } from "@/lib/news.server";
+import { AVAILABLE_CATEGORIES } from "@/lib/networks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

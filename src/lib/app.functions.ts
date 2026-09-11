@@ -2,10 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runPipeline, discoverTopics, generateForTopic } from "./pipeline.server";
-import { publishToChannel } from "./publish.server";
+import { publishToChannel, isChannelConnected, canAutoPost } from "./publish.server";
 import type { Database } from "@/integrations/supabase/types";
 
 const statusSchema = z.enum(["draft", "approved", "scheduled", "published", "rejected", "failed"]);
+
 
 export const getDashboardStats = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
   async ({ context }) => {
@@ -161,6 +162,9 @@ export const updateSettings = createServerFn({ method: "POST" })
         postingWindowStart: z.number().min(0).max(23).optional(),
         postingWindowEnd: z.number().min(0).max(23).optional(),
         autoRun: z.boolean().optional(),
+        tone: z.string().max(40).optional(),
+        postLength: z.enum(["short", "medium", "long"]).optional(),
+        styleNotes: z.string().max(1000).optional(),
       })
       .parse(data),
   )
@@ -174,6 +178,10 @@ export const updateSettings = createServerFn({ method: "POST" })
     if (data.postingWindowStart !== undefined) patch.posting_window_start = data.postingWindowStart;
     if (data.postingWindowEnd !== undefined) patch.posting_window_end = data.postingWindowEnd;
     if (data.autoRun !== undefined) patch.auto_run = data.autoRun;
+    if (data.tone !== undefined) patch.tone = data.tone;
+    if (data.postLength !== undefined) patch.post_length = data.postLength;
+    if (data.styleNotes !== undefined) patch.style_notes = data.styleNotes;
+
 
     const { data: existing } = await supabase.from("settings").select("user_id").eq("user_id", userId).maybeSingle();
     if (existing) {
@@ -223,5 +231,34 @@ export const runPipelineNow = createServerFn({ method: "POST" }).middleware([req
   async ({ context }) => {
     const { supabase, userId } = context;
     return runPipeline(supabase, userId, { batchSize: 3, source: "manual" });
+  },
+);
+
+/** Channel rows plus whether the account is actually linked for auto-posting. */
+export const getNetworkStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
+  async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase.from("channels").select("*").eq("user_id", userId).order("channel");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => ({
+      ...row,
+      linked: isChannelConnected(row.channel),
+      autoPost: canAutoPost(row.channel),
+    }));
+  },
+);
+
+/** Newest generated posts for the dashboard feed. */
+export const getRecentDrafts = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
+  async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("drafts")
+      .select("*, topics(title, source_name, source_url, category)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(12);
+    if (error) throw new Error(error.message);
+    return data ?? [];
   },
 );
