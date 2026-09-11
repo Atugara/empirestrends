@@ -213,4 +213,20 @@ function SettingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Badge variant={channel.enabled ? "default" : "secondary
+                <Badge variant={channel.enabled ? "default" : "secondary"}>{channel.enabled ? "Enabled" : "Disabled"}</Badge>
+                <Switch
+                  checked={channel.enabled}
+                  onCheckedChange={(v) => channelMutation.mutate({ id: channel.id, enabled: v })}
+                  disabled={channelMutation.isPending}
+                />
+              </div>
+            </div>
+          ))}
+          {channels.length === 0 && (
+            <p className="text-sm text-muted-foreground">No channels configured. LinkedIn can be connected via the gateway; others are stubbed until credentials are added.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
