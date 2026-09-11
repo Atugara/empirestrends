@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          token?: string
+        }
+        Relationships: []
+      }
       drafts: {
         Row: {
           body: string
