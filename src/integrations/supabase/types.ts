@@ -81,6 +81,8 @@ export type Database = {
           updated_at: string
           user_id: string
           video_script: string | null
+          video_status: string
+          video_url: string | null
         }
         Insert: {
           body?: string
@@ -97,6 +99,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_script?: string | null
+          video_status?: string
+          video_url?: string | null
         }
         Update: {
           body?: string
@@ -113,6 +117,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_script?: string | null
+          video_status?: string
+          video_url?: string | null
         }
         Relationships: [
           {
