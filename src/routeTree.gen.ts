@@ -13,8 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppPublishedRouteImport } from './routes/_app/published'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
+import { Route as AppScheduleRouteImport } from './routes/_app/schedule'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppTrendsRouteImport } from './routes/_app/trends'
+import { Route as ApiPublicRunPipelineRouteImport } from './routes/api/public/run-pipeline'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,9 +39,24 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPublishedRoute = AppPublishedRouteImport.update({
+  id: '/published',
+  path: '/published',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReviewRoute = AppReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppScheduleRoute = AppScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTrendsRoute = AppTrendsRouteImport.update({
@@ -45,20 +64,33 @@ const AppTrendsRoute = AppTrendsRouteImport.update({
   path: '/trends',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicRunPipelineRoute = ApiPublicRunPipelineRouteImport.update({
+  id: '/api/public/run-pipeline',
+  path: '/api/public/run-pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
+  '/published': typeof AppPublishedRoute
   '/review': typeof AppReviewRoute
+  '/schedule': typeof AppScheduleRoute
+  '/settings': typeof AppSettingsRoute
   '/trends': typeof AppTrendsRoute
+  '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
+  '/published': typeof AppPublishedRoute
   '/review': typeof AppReviewRoute
+  '/schedule': typeof AppScheduleRoute
+  '/settings': typeof AppSettingsRoute
   '/trends': typeof AppTrendsRoute
+  '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -66,28 +98,55 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/published': typeof AppPublishedRoute
   '/_app/review': typeof AppReviewRoute
+  '/_app/schedule': typeof AppScheduleRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/trends': typeof AppTrendsRoute
+  '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/review' | '/trends'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/published'
+    | '/review'
+    | '/schedule'
+    | '/settings'
+    | '/trends'
+    | '/api/public/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/review' | '/trends'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/published'
+    | '/review'
+    | '/schedule'
+    | '/settings'
+    | '/trends'
+    | '/api/public/run-pipeline'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/auth'
     | '/_app/dashboard'
+    | '/_app/published'
     | '/_app/review'
+    | '/_app/schedule'
+    | '/_app/settings'
     | '/_app/trends'
+    | '/api/public/run-pipeline'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicRunPipelineRoute: typeof ApiPublicRunPipelineRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -120,11 +179,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/published': {
+      id: '/_app/published'
+      path: '/published'
+      fullPath: '/published'
+      preLoaderRoute: typeof AppPublishedRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/review': {
       id: '/_app/review'
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof AppReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/schedule': {
+      id: '/_app/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof AppScheduleRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/trends': {
@@ -134,18 +214,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTrendsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/run-pipeline': {
+      id: '/api/public/run-pipeline'
+      path: '/api/public/run-pipeline'
+      fullPath: '/api/public/run-pipeline'
+      preLoaderRoute: typeof ApiPublicRunPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppPublishedRoute: typeof AppPublishedRoute
   AppReviewRoute: typeof AppReviewRoute
+  AppScheduleRoute: typeof AppScheduleRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppTrendsRoute: typeof AppTrendsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppPublishedRoute: AppPublishedRoute,
   AppReviewRoute: AppReviewRoute,
+  AppScheduleRoute: AppScheduleRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppTrendsRoute: AppTrendsRoute,
 }
 
@@ -155,6 +248,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicRunPipelineRoute: ApiPublicRunPipelineRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
