@@ -141,7 +141,7 @@ function SettingsPage() {
               min={1}
               max={10}
               step={1}
-              onValueChange={([v]) => setForm((f) => ({ ...f, humorLevel: v }))}
+              onValueChange={([v]) => setForm((f) => ({ ...f, humorLevel: v ?? 5 }))}
             />
           </div>
 
@@ -193,7 +193,7 @@ function SettingsPage() {
             />
           </div>
 
-          <Button onClick={() => settingsMutation.mutate(form)} disabled={settingsMutation.isPending} className="gap-2">
+          <Button onClick={() => settingsMutation.mutate({ data: form })} disabled={settingsMutation.isPending} className="gap-2">
             <Save className="h-4 w-4" /> Save settings
           </Button>
         </CardContent>
@@ -216,7 +216,7 @@ function SettingsPage() {
                 <Badge variant={channel.enabled ? "default" : "secondary"}>{channel.enabled ? "Enabled" : "Disabled"}</Badge>
                 <Switch
                   checked={channel.enabled}
-                  onCheckedChange={(v) => channelMutation.mutate({ id: channel.id, enabled: v })}
+                  onCheckedChange={(v) => channelMutation.mutate({ data: { id: channel.id, enabled: v } })}
                   disabled={channelMutation.isPending}
                 />
               </div>
