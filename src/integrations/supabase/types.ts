@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_config: {
+        Row: {
+          cron_secret: string
+          id: boolean
+        }
+        Insert: {
+          cron_secret: string
+          id?: boolean
+        }
+        Update: {
+          cron_secret?: string
+          id?: boolean
+        }
+        Relationships: []
+      }
       channels: {
         Row: {
           account_label: string
@@ -189,8 +204,11 @@ export type Database = {
           keywords: string
           pause_reason: string | null
           paused: boolean
+          post_length: string
           posting_window_end: number
           posting_window_start: number
+          style_notes: string
+          tone: string
           updated_at: string
           user_id: string
         }
@@ -202,8 +220,11 @@ export type Database = {
           keywords?: string
           pause_reason?: string | null
           paused?: boolean
+          post_length?: string
           posting_window_end?: number
           posting_window_start?: number
+          style_notes?: string
+          tone?: string
           updated_at?: string
           user_id: string
         }
@@ -215,8 +236,11 @@ export type Database = {
           keywords?: string
           pause_reason?: string | null
           paused?: boolean
+          post_length?: string
           posting_window_end?: number
           posting_window_start?: number
+          style_notes?: string
+          tone?: string
           updated_at?: string
           user_id?: string
         }
