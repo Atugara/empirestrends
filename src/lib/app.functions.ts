@@ -233,3 +233,32 @@ export const runPipelineNow = createServerFn({ method: "POST" }).middleware([req
     return runPipeline(supabase, userId, { batchSize: 3, source: "manual" });
   },
 );
+
+/** Channel rows plus whether the account is actually linked for auto-posting. */
+export const getNetworkStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
+  async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase.from("channels").select("*").eq("user_id", userId).order("channel");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => ({
+      ...row,
+      linked: isChannelConnected(row.channel),
+      autoPost: canAutoPost(row.channel),
+    }));
+  },
+);
+
+/** Newest generated posts for the dashboard feed. */
+export const getRecentDrafts = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
+  async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("drafts")
+      .select("*, topics(title, source_name, source_url, category)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(12);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  },
+);
