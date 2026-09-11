@@ -17,6 +17,7 @@ import { Route as AppPublishedRouteImport } from './routes/_app/published'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppScheduleRouteImport } from './routes/_app/schedule'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppStyleGuideRouteImport } from './routes/_app/style-guide'
 import { Route as AppTrendsRouteImport } from './routes/_app/trends'
 import { Route as ApiPublicRunPipelineRouteImport } from './routes/api/public/run-pipeline'
 
@@ -59,6 +60,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppStyleGuideRoute = AppStyleGuideRouteImport.update({
+  id: '/style-guide',
+  path: '/style-guide',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTrendsRoute = AppTrendsRouteImport.update({
   id: '/trends',
   path: '/trends',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AppReviewRoute
   '/schedule': typeof AppScheduleRoute
   '/settings': typeof AppSettingsRoute
+  '/style-guide': typeof AppStyleGuideRoute
   '/trends': typeof AppTrendsRoute
   '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/review': typeof AppReviewRoute
   '/schedule': typeof AppScheduleRoute
   '/settings': typeof AppSettingsRoute
+  '/style-guide': typeof AppStyleGuideRoute
   '/trends': typeof AppTrendsRoute
   '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_app/review': typeof AppReviewRoute
   '/_app/schedule': typeof AppScheduleRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/style-guide': typeof AppStyleGuideRoute
   '/_app/trends': typeof AppTrendsRoute
   '/api/public/run-pipeline': typeof ApiPublicRunPipelineRoute
 }
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/schedule'
     | '/settings'
+    | '/style-guide'
     | '/trends'
     | '/api/public/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/schedule'
     | '/settings'
+    | '/style-guide'
     | '/trends'
     | '/api/public/run-pipeline'
   id:
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_app/review'
     | '/_app/schedule'
     | '/_app/settings'
+    | '/_app/style-guide'
     | '/_app/trends'
     | '/api/public/run-pipeline'
   fileRoutesById: FileRoutesById
@@ -207,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/style-guide': {
+      id: '/_app/style-guide'
+      path: '/style-guide'
+      fullPath: '/style-guide'
+      preLoaderRoute: typeof AppStyleGuideRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/trends': {
       id: '/_app/trends'
       path: '/trends'
@@ -230,6 +249,7 @@ interface AppRouteChildren {
   AppReviewRoute: typeof AppReviewRoute
   AppScheduleRoute: typeof AppScheduleRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppStyleGuideRoute: typeof AppStyleGuideRoute
   AppTrendsRoute: typeof AppTrendsRoute
 }
 
@@ -239,6 +259,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewRoute: AppReviewRoute,
   AppScheduleRoute: AppScheduleRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppStyleGuideRoute: AppStyleGuideRoute,
   AppTrendsRoute: AppTrendsRoute,
 }
 
