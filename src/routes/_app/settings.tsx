@@ -6,7 +6,7 @@ import { Save, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 import { getSettings, updateSettings, getChannels, updateChannel } from "@/lib/app.functions";
-import { AVAILABLE_CATEGORIES } from "@/lib/news.server";
+import { AVAILABLE_CATEGORIES } from "@/lib/networks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

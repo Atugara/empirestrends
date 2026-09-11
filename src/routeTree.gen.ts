@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppConnectionsRouteImport } from './routes/_app/connections'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppPublishedRouteImport } from './routes/_app/published'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
@@ -34,6 +35,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppConnectionsRoute = AppConnectionsRouteImport.update({
+  id: '/connections',
+  path: '/connections',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
@@ -79,6 +85,7 @@ const ApiPublicRunPipelineRoute = ApiPublicRunPipelineRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/connections': typeof AppConnectionsRoute
   '/dashboard': typeof AppDashboardRoute
   '/published': typeof AppPublishedRoute
   '/review': typeof AppReviewRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/connections': typeof AppConnectionsRoute
   '/dashboard': typeof AppDashboardRoute
   '/published': typeof AppPublishedRoute
   '/review': typeof AppReviewRoute
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_app/connections': typeof AppConnectionsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/published': typeof AppPublishedRoute
   '/_app/review': typeof AppReviewRoute
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/connections'
     | '/dashboard'
     | '/published'
     | '/review'
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/connections'
     | '/dashboard'
     | '/published'
     | '/review'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/auth'
+    | '/_app/connections'
     | '/_app/dashboard'
     | '/_app/published'
     | '/_app/review'
@@ -183,6 +195,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/connections': {
+      id: '/_app/connections'
+      path: '/connections'
+      fullPath: '/connections'
+      preLoaderRoute: typeof AppConnectionsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
       id: '/_app/dashboard'
@@ -244,6 +263,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppConnectionsRoute: typeof AppConnectionsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppPublishedRoute: typeof AppPublishedRoute
   AppReviewRoute: typeof AppReviewRoute
@@ -254,6 +274,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppConnectionsRoute: AppConnectionsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppPublishedRoute: AppPublishedRoute,
   AppReviewRoute: AppReviewRoute,
