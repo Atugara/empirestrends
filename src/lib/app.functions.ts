@@ -2,10 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runPipeline, discoverTopics, generateForTopic } from "./pipeline.server";
-import { publishToChannel } from "./publish.server";
+import { publishToChannel, isChannelConnected, canAutoPost } from "./publish.server";
 import type { Database } from "@/integrations/supabase/types";
 
 const statusSchema = z.enum(["draft", "approved", "scheduled", "published", "rejected", "failed"]);
+
 
 export const getDashboardStats = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
   async ({ context }) => {
