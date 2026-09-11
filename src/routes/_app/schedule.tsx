@@ -66,7 +66,7 @@ function SchedulePage() {
             <ScheduledCard
               key={draft.id}
               draft={draft}
-              onUpdate={(patch) => updateMutation.mutate({ id: draft.id, ...patch })}
+              onUpdate={(patch) => updateMutation.mutate({ data: { id: draft.id, ...patch } })}
               isPending={updateMutation.isPending}
             />
           ))}
@@ -99,8 +99,6 @@ function ScheduledCard({
             <span className="text-xs text-muted-foreground">{draft.topics?.title}</span>
           </div>
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onUpdate({ status: "approved", scheduledAt: null })} disabled={isPending}>
-            <X className="h-4 w-4 text-destructive" />
-          </Button>
             <X className="h-4 w-4 text-destructive" />
           </Button>
         </div>
