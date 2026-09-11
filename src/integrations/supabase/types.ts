@@ -14,21 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      automation_config: {
-        Row: {
-          cron_secret: string
-          id: boolean
-        }
-        Insert: {
-          cron_secret: string
-          id?: boolean
-        }
-        Update: {
-          cron_secret?: string
-          id?: boolean
-        }
-        Relationships: []
-      }
       channels: {
         Row: {
           account_label: string
