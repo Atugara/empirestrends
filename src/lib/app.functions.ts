@@ -162,6 +162,9 @@ export const updateSettings = createServerFn({ method: "POST" })
         postingWindowStart: z.number().min(0).max(23).optional(),
         postingWindowEnd: z.number().min(0).max(23).optional(),
         autoRun: z.boolean().optional(),
+        tone: z.string().max(40).optional(),
+        postLength: z.enum(["short", "medium", "long"]).optional(),
+        styleNotes: z.string().max(1000).optional(),
       })
       .parse(data),
   )
@@ -175,6 +178,10 @@ export const updateSettings = createServerFn({ method: "POST" })
     if (data.postingWindowStart !== undefined) patch.posting_window_start = data.postingWindowStart;
     if (data.postingWindowEnd !== undefined) patch.posting_window_end = data.postingWindowEnd;
     if (data.autoRun !== undefined) patch.auto_run = data.autoRun;
+    if (data.tone !== undefined) patch.tone = data.tone;
+    if (data.postLength !== undefined) patch.post_length = data.postLength;
+    if (data.styleNotes !== undefined) patch.style_notes = data.styleNotes;
+
 
     const { data: existing } = await supabase.from("settings").select("user_id").eq("user_id", userId).maybeSingle();
     if (existing) {
