@@ -5,7 +5,7 @@ import { Sparkles, FileText, CalendarClock, CheckCircle, Play, RefreshCw } from 
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
-import { getDashboardStats, runPipelineNow } from "@/lib/app.functions";
+import { getDashboardStats, runPipelineNow, getRecentDrafts } from "@/lib/app.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +28,16 @@ function DashboardPage() {
   const queryClient = useQueryClient();
   const fetchStats = useServerFn(getDashboardStats);
   const runPipeline = useServerFn(runPipelineNow);
+  const fetchRecent = useServerFn(getRecentDrafts);
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: fetchStats,
+  });
+
+  const { data: recent, isLoading: recentLoading } = useQuery({
+    queryKey: ["recent-drafts"],
+    queryFn: fetchRecent,
   });
 
   const runMutation = useMutation({
@@ -39,11 +45,13 @@ function DashboardPage() {
     onSuccess: (result) => {
       toast.success(result.message);
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-drafts"] });
       queryClient.invalidateQueries({ queryKey: ["topics"] });
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
 
   const statCards = [
     { label: "Trends found", value: stats?.topics ?? 0, icon: Sparkles, href: "/trends" },
@@ -104,9 +112,50 @@ function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Latest generated posts</CardTitle>
+          <Link to="/review" className="text-sm text-primary hover:underline">
+            Review all
+          </Link>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {recentLoading && <p className="text-sm text-muted-foreground">Loading posts…</p>}
+          {!recentLoading && (recent?.length ?? 0) === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nothing written yet. The bot runs every morning, or press “Run pipeline now”.
+            </p>
+          )}
+          {recent?.map((draft) => (
+            <div key={draft.id} className="rounded-lg border border-border p-4">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{draft.channel}</Badge>
+                <Badge variant="outline">{draft.status}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(draft.created_at), { addSuffix: true })}
+                </span>
+              </div>
+              {draft.topics?.title && (
+                <p className="mb-1 text-xs font-medium text-muted-foreground">{draft.topics.title}</p>
+              )}
+              <p className="whitespace-pre-wrap text-sm text-foreground">{draft.body}</p>
+              {draft.video_script && (
+                <p className="mt-2 whitespace-pre-wrap rounded bg-muted/40 p-2 text-xs text-muted-foreground">
+                  {draft.video_script}
+                </p>
+              )}
+              {draft.hashtags.length > 0 && (
+                <p className="mt-2 text-xs text-primary">{draft.hashtags.map((h) => `#${h}`).join(" ")}</p>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
 
 function healthVariant(status: string) {
   if (status === "success") return "default";
