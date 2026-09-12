@@ -148,6 +148,9 @@ function DashboardPage() {
                   {draft.video_script}
                 </p>
               )}
+              {draft.video_url && (
+                <video src={draft.video_url} controls className="mt-3 max-h-72 w-full rounded-md bg-muted" />
+              )}
               {draft.hashtags.length > 0 && (
                 <p className="mt-2 text-xs text-primary">{draft.hashtags.map((h) => `#${h}`).join(" ")}</p>
               )}
