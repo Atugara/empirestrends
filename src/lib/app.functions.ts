@@ -407,7 +407,7 @@ export const approveDraft = createServerFn({ method: "POST" })
 
     await supabase.from("drafts").update({ status: "approved" }).eq("id", draft.id).eq("user_id", userId);
 
-    if (!canAutoPost(draft.channel)) {
+    if (!(await canAutoPost(supabase, userId, draft.channel))) {
       return {
         ok: true,
         published: false,
@@ -415,8 +415,10 @@ export const approveDraft = createServerFn({ method: "POST" })
       };
     }
 
-    const result = await publishToChannel(draft.channel, draft.body, draft.video_url);
+    const creds = await getChannelCredentials(supabase, userId, draft.channel);
+    const result = await publishToChannel(draft.channel, creds, draft.body, draft.video_url);
     const now = new Date().toISOString();
+
 
     if (!result.ok) {
       await supabase
