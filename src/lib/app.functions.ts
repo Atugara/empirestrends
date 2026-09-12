@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runPipeline, discoverTopics, generateForTopic } from "./pipeline.server";
-import { publishToChannel, isChannelConnected, canAutoPost } from "./publish.server";
+import { publishToChannel, isChannelConnected, canAutoPost, fetchMetrics } from "./publish.server";
 import type { Database } from "@/integrations/supabase/types";
 
 const statusSchema = z.enum(["draft", "approved", "scheduled", "published", "rejected", "failed"]);
@@ -116,10 +116,20 @@ export const publishDraft = createServerFn({ method: "POST" })
     const { data: draft, error } = await supabase.from("drafts").select("*").eq("id", data.id).eq("user_id", userId).single();
     if (error || !draft) throw new Error("Draft not found.");
 
-    const result = await publishToChannel(draft.channel, draft.body);
+    const result = await publishToChannel(draft.channel, draft.body, draft.video_url);
     if (result.ok) {
       const now = new Date().toISOString();
-      await supabase.from("drafts").update({ status: "published", published_at: now }).eq("id", data.id).eq("user_id", userId);
+      await supabase
+        .from("drafts")
+        .update({
+          status: "published",
+          published_at: now,
+          external_url: result.url ?? null,
+          external_id: result.externalId ?? null,
+          error: null,
+        })
+        .eq("id", data.id)
+        .eq("user_id", userId);
       await supabase.from("publish_log").insert({
         user_id: userId,
         draft_id: data.id,
@@ -300,3 +310,147 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
 
     return { ok: true, message: "Clip is ready.", url: result.url };
   });
+
+/**
+ * Approves a post and publishes it straight away when its account is linked.
+ * Networks without a sign-in stay approved so they can be copied out by hand.
+ */
+export const approveDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: draft, error } = await supabase
+      .from("drafts")
+      .select("*")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .single();
+    if (error || !draft) throw new Error("Draft not found.");
+
+    await supabase.from("drafts").update({ status: "approved" }).eq("id", draft.id).eq("user_id", userId);
+
+    if (!canAutoPost(draft.channel)) {
+      return {
+        ok: true,
+        published: false,
+        message: `Approved. ${draft.channel} has no linked account, so copy it across yourself.`,
+      };
+    }
+
+    const result = await publishToChannel(draft.channel, draft.body, draft.video_url);
+    const now = new Date().toISOString();
+
+    if (!result.ok) {
+      await supabase
+        .from("drafts")
+        .update({ status: "failed", error: result.message })
+        .eq("id", draft.id)
+        .eq("user_id", userId);
+      await supabase.from("publish_log").insert({
+        user_id: userId,
+        draft_id: draft.id,
+        channel: draft.channel,
+        status: "failed",
+        message: result.message,
+      });
+      return { ok: false, published: false, message: result.message };
+    }
+
+    await supabase
+      .from("drafts")
+      .update({
+        status: "published",
+        published_at: now,
+        external_url: result.url ?? null,
+        external_id: result.externalId ?? null,
+        error: null,
+      })
+      .eq("id", draft.id)
+      .eq("user_id", userId);
+    await supabase.from("publish_log").insert({
+      user_id: userId,
+      draft_id: draft.id,
+      channel: draft.channel,
+      status: "published",
+      message: result.note ?? (result.url ? `Published: ${result.url}` : "Published successfully."),
+    });
+
+    return {
+      ok: true,
+      published: true,
+      message: result.note ?? `Posted to ${draft.channel}.`,
+      url: result.url ?? null,
+    };
+  });
+
+/** Published posts with their latest saved likes, shares and comments. */
+export const getAnalytics = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
+  async ({ context }) => {
+    const { supabase, userId } = context;
+    const [{ data: posts, error }, { data: metrics }] = await Promise.all([
+      supabase
+        .from("drafts")
+        .select("id, channel, body, hashtags, published_at, external_url, external_id, topics(title)")
+        .eq("user_id", userId)
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(100),
+      supabase.from("post_metrics").select("*").eq("user_id", userId),
+    ]);
+    if (error) throw new Error(error.message);
+
+    const byDraft = new Map((metrics ?? []).map((row) => [row.draft_id, row]));
+    return (posts ?? []).map((post) => ({ ...post, metrics: byDraft.get(post.id) ?? null }));
+  },
+);
+
+/** Pulls fresh likes, shares and comments from every network that supports it. */
+export const refreshAnalytics = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(
+  async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: posts, error } = await supabase
+      .from("drafts")
+      .select("id, channel, external_id")
+      .eq("user_id", userId)
+      .eq("status", "published")
+      .not("external_id", "is", null)
+      .limit(50);
+    if (error) throw new Error(error.message);
+    if (!posts || posts.length === 0) {
+      return { ok: true, updated: 0, message: "No published posts with network stats yet." };
+    }
+
+    let updated = 0;
+    const problems: string[] = [];
+    for (const post of posts) {
+      const result = await fetchMetrics(post.channel, post.external_id);
+      if (!result.ok) {
+        problems.push(result.message);
+        continue;
+      }
+      const { error: upsertError } = await supabase.from("post_metrics").upsert(
+        {
+          user_id: userId,
+          draft_id: post.id,
+          channel: post.channel,
+          likes: result.likes,
+          shares: result.shares,
+          comments: result.comments,
+          impressions: result.impressions,
+          note: result.note ?? "",
+          fetched_at: new Date().toISOString(),
+        },
+        { onConflict: "draft_id" },
+      );
+      if (upsertError) problems.push(upsertError.message);
+      else updated += 1;
+    }
+
+    return {
+      ok: true,
+      updated,
+      message: updated > 0 ? `Refreshed stats for ${updated} post(s).` : (problems[0] ?? "No stats available yet."),
+    };
+  },
+);
