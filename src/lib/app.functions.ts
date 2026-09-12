@@ -283,7 +283,7 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
 
     const { data: draft, error } = await supabase
       .from("drafts")
-      .select("id, video_script, channel")
+      .select("id, video_script, channel, body")
       .eq("id", data.id)
       .eq("user_id", userId)
       .single();
@@ -308,7 +308,41 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
       .eq("id", draft.id)
       .eq("user_id", userId);
 
-    return { ok: true, message: "Clip is ready.", url: result.url };
+    // Video networks with a linked account get the finished clip posted for them.
+    if (canAutoPost(draft.channel)) {
+      const posted = await publishToChannel(draft.channel, draft.body, result.url);
+      if (posted.ok) {
+        await supabase
+          .from("drafts")
+          .update({
+            status: "published",
+            published_at: new Date().toISOString(),
+            external_url: posted.url ?? null,
+            external_id: posted.externalId ?? null,
+            error: null,
+          })
+          .eq("id", draft.id)
+          .eq("user_id", userId);
+        await supabase.from("publish_log").insert({
+          user_id: userId,
+          draft_id: draft.id,
+          channel: draft.channel,
+          status: "published",
+          message: posted.note ?? "Clip posted.",
+        });
+        return { ok: true, message: posted.note ?? `Clip posted to ${draft.channel}.`, url: result.url };
+      }
+      await supabase.from("publish_log").insert({
+        user_id: userId,
+        draft_id: draft.id,
+        channel: draft.channel,
+        status: "failed",
+        message: posted.message,
+      });
+      return { ok: true, message: `Clip is ready, but posting failed: ${posted.message}`, url: result.url };
+    }
+
+    return { ok: true, message: "Clip is ready. Approve the post to send it out.", url: result.url };
   });
 
 /**

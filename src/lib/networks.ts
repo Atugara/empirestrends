@@ -37,20 +37,20 @@ export const NETWORKS: NetworkMeta[] = [
   {
     id: "tiktok",
     name: "TikTok",
-    autoPost: false,
-    howTo: "Sign in with TikTok to link your account. Videos still need to be uploaded by you.",
+    autoPost: true,
+    howTo: "Sign in with TikTok and the bot films the clip and posts it for you.",
   },
   {
     id: "facebook",
     name: "Facebook",
     autoPost: false,
-    howTo: "No direct sign-in yet — copy the post and paste it into Facebook.",
+    howTo: "Facebook sign-in isn\u2019t available here yet — copy the post and paste it into Facebook.",
   },
   {
     id: "instagram",
     name: "Instagram",
     autoPost: false,
-    howTo: "No direct sign-in yet — copy the caption and post it with your video.",
+    howTo: "Instagram sign-in isn\u2019t available here yet — copy the caption and post it with the clip.",
   },
 ];
 

@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, X, Pencil, Film, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { getDrafts, updateDraft, makeVideoForDraft } from "@/lib/app.functions";
+import { getDrafts, updateDraft, makeVideoForDraft, approveDraft } from "@/lib/app.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ export function ApprovalQueue() {
   const fetchDrafts = useServerFn(getDrafts);
   const saveDraft = useServerFn(updateDraft);
   const makeVideo = useServerFn(makeVideoForDraft);
+  const approve = useServerFn(approveDraft);
 
   const [editing, setEditing] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -33,6 +34,18 @@ export function ApprovalQueue() {
   const mutate = useMutation({
     mutationFn: saveDraft,
     onSuccess: () => refresh(),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: approve,
+    onSuccess: (result: { ok: boolean; message: string }) => {
+      if (result.ok) toast.success(result.message);
+      else toast.error(result.message);
+      refresh();
+      queryClient.invalidateQueries({ queryKey: ["publish-log"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -109,9 +122,15 @@ export function ApprovalQueue() {
                     <Button
                       size="sm"
                       className="gap-1"
-                      onClick={() => mutate.mutate({ data: { id: draft.id, status: "approved" } })}
+                      disabled={approveMutation.isPending}
+                      onClick={() => approveMutation.mutate({ data: { id: draft.id } })}
                     >
-                      <Check className="h-4 w-4" /> Approve
+                      {approveMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                      Approve & post
                     </Button>
                     <Button
                       size="sm"
