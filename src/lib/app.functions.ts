@@ -503,8 +503,10 @@ export const refreshAnalytics = createServerFn({ method: "POST" }).middleware([r
     let updated = 0;
     const problems: string[] = [];
     for (const post of posts) {
-      const result = await fetchMetrics(post.channel, post.external_id);
+      const creds = await getChannelCredentials(supabase, userId, post.channel);
+      const result = await fetchMetrics(post.channel, creds, post.external_id);
       if (!result.ok) {
+
         problems.push(result.message);
         continue;
       }
