@@ -2,8 +2,36 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runPipeline, discoverTopics, generateForTopic } from "./pipeline.server";
-import { publishToChannel, isChannelConnected, canAutoPost, fetchMetrics } from "./publish.server";
+import { publishToChannel, fetchMetrics, checkChannelCredentials } from "./publish.server";
 import type { Database } from "@/integrations/supabase/types";
+import type { ChannelCredentials } from "./networks";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+type Client = SupabaseClient<Database>;
+
+async function getChannelCredentials(supabase: Client, userId: string, channel: string): Promise<ChannelCredentials | null> {
+  const { data, error } = await supabase
+    .from("channel_credentials")
+    .select("credentials")
+    .eq("user_id", userId)
+    .eq("channel", channel)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.credentials as ChannelCredentials | null) ?? null;
+}
+
+async function isChannelConnected(supabase: Client, userId: string, channel: string): Promise<boolean> {
+  const creds = await getChannelCredentials(supabase, userId, channel);
+  if (!creds) return false;
+  const check = await checkChannelCredentials(channel, creds);
+  return check.ok;
+}
+
+async function canAutoPost(supabase: Client, userId: string, channel: string): Promise<boolean> {
+  return isChannelConnected(supabase, userId, channel);
+}
+
+
 
 const statusSchema = z.enum(["draft", "approved", "scheduled", "published", "rejected", "failed"]);
 
@@ -116,8 +144,10 @@ export const publishDraft = createServerFn({ method: "POST" })
     const { data: draft, error } = await supabase.from("drafts").select("*").eq("id", data.id).eq("user_id", userId).single();
     if (error || !draft) throw new Error("Draft not found.");
 
-    const result = await publishToChannel(draft.channel, draft.body, draft.video_url);
+    const creds = await getChannelCredentials(supabase, userId, draft.channel);
+    const result = await publishToChannel(draft.channel, creds, draft.body, draft.video_url);
     if (result.ok) {
+
       const now = new Date().toISOString();
       await supabase
         .from("drafts")
@@ -250,11 +280,15 @@ export const getNetworkStatus = createServerFn({ method: "GET" }).middleware([re
     const { supabase, userId } = context;
     const { data, error } = await supabase.from("channels").select("*").eq("user_id", userId).order("channel");
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => ({
-      ...row,
-      linked: isChannelConnected(row.channel),
-      autoPost: canAutoPost(row.channel),
-    }));
+    const rows = data ?? [];
+    const enriched = await Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        linked: await isChannelConnected(supabase, userId, row.channel),
+        autoPost: await canAutoPost(supabase, userId, row.channel),
+      })),
+    );
+    return enriched;
   },
 );
 
@@ -312,9 +346,11 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
       .eq("user_id", userId);
 
     // Video networks with a linked account get the finished clip posted for them.
-    if (canAutoPost(draft.channel)) {
-      const posted = await publishToChannel(draft.channel, draft.body, result.url);
+    if (await canAutoPost(supabase, userId, draft.channel)) {
+      const creds = await getChannelCredentials(supabase, userId, draft.channel);
+      const posted = await publishToChannel(draft.channel, creds, draft.body, result.url);
       if (posted.ok) {
+
         await supabase
           .from("drafts")
           .update({
@@ -371,7 +407,7 @@ export const approveDraft = createServerFn({ method: "POST" })
 
     await supabase.from("drafts").update({ status: "approved" }).eq("id", draft.id).eq("user_id", userId);
 
-    if (!canAutoPost(draft.channel)) {
+    if (!(await canAutoPost(supabase, userId, draft.channel))) {
       return {
         ok: true,
         published: false,
@@ -379,8 +415,10 @@ export const approveDraft = createServerFn({ method: "POST" })
       };
     }
 
-    const result = await publishToChannel(draft.channel, draft.body, draft.video_url);
+    const creds = await getChannelCredentials(supabase, userId, draft.channel);
+    const result = await publishToChannel(draft.channel, creds, draft.body, draft.video_url);
     const now = new Date().toISOString();
+
 
     if (!result.ok) {
       await supabase
@@ -465,8 +503,10 @@ export const refreshAnalytics = createServerFn({ method: "POST" }).middleware([r
     let updated = 0;
     const problems: string[] = [];
     for (const post of posts) {
-      const result = await fetchMetrics(post.channel, post.external_id);
+      const creds = await getChannelCredentials(supabase, userId, post.channel);
+      const result = await fetchMetrics(post.channel, creds, post.external_id);
       if (!result.ok) {
+
         problems.push(result.message);
         continue;
       }
