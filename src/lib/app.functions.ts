@@ -2,8 +2,46 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runPipeline, discoverTopics, generateForTopic } from "./pipeline.server";
-import { publishToChannel, isChannelConnected, canAutoPost, fetchMetrics } from "./publish.server";
+import { publishToChannel, fetchMetrics, checkChannelCredentials } from "./publish.server";
 import type { Database } from "@/integrations/supabase/types";
+import type { ChannelCredentials } from "./networks";
+
+type CredentialsRow = Database["public"]["Tables"]["channel_credentials"]["Row"];
+
+async function getChannelCredentials(
+  supabase: ReturnType<typeof import("@/integrations/supabase/auth-middleware").requireSupabaseAuth> extends (...args: any[]) => Promise<{ context: { supabase: infer S } }> ? S : never,
+  userId: string,
+  channel: string,
+): Promise<ChannelCredentials | null> {
+  const { data, error } = await supabase
+    .from("channel_credentials")
+    .select("credentials")
+    .eq("user_id", userId)
+    .eq("channel", channel)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.credentials as ChannelCredentials | null) ?? null;
+}
+
+async function isChannelConnected(
+  supabase: ReturnType<typeof import("@/integrations/supabase/auth-middleware").requireSupabaseAuth> extends (...args: any[]) => Promise<{ context: { supabase: infer S } }> ? S : never,
+  userId: string,
+  channel: string,
+): Promise<boolean> {
+  const creds = await getChannelCredentials(supabase, userId, channel);
+  if (!creds) return false;
+  const check = await checkChannelCredentials(channel, creds);
+  return check.ok;
+}
+
+async function canAutoPost(
+  supabase: ReturnType<typeof import("@/integrations/supabase/auth-middleware").requireSupabaseAuth> extends (...args: any[]) => Promise<{ context: { supabase: infer S } }> ? S : never,
+  userId: string,
+  channel: string,
+): Promise<boolean> {
+  return isChannelConnected(supabase, userId, channel);
+}
+
 
 const statusSchema = z.enum(["draft", "approved", "scheduled", "published", "rejected", "failed"]);
 
