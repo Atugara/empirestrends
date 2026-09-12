@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      channel_credentials: {
+        Row: {
+          account_label: string | null
+          channel: string
+          created_at: string
+          credentials: Json
+          id: string
+          last_check_message: string | null
+          last_check_ok: boolean | null
+          last_checked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_label?: string | null
+          channel: string
+          created_at?: string
+          credentials?: Json
+          id?: string
+          last_check_message?: string | null
+          last_check_ok?: boolean | null
+          last_checked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_label?: string | null
+          channel?: string
+          created_at?: string
+          credentials?: Json
+          id?: string
+          last_check_message?: string | null
+          last_check_ok?: boolean | null
+          last_checked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       channels: {
         Row: {
           account_label: string
