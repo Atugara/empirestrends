@@ -47,6 +47,7 @@ function DashboardPage() {
       toast.success(result.message);
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       queryClient.invalidateQueries({ queryKey: ["recent-drafts"] });
+      queryClient.invalidateQueries({ queryKey: ["approval-queue"] });
       queryClient.invalidateQueries({ queryKey: ["topics"] });
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
     },
