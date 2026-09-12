@@ -365,10 +365,10 @@ export const saveChannelCredentials = createServerFn({ method: "POST" })
         user_id: userId,
         channel: data.channel,
         credentials: merged,
-        account_label: check.ok ? check.label ?? null : null,
+        account_label: check.ok ? check.label : null,
         last_checked_at: new Date().toISOString(),
         last_check_ok: check.ok,
-        last_check_message: check.message ?? null,
+        last_check_message: check.ok ? null : check.message,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,channel" },
@@ -377,11 +377,11 @@ export const saveChannelCredentials = createServerFn({ method: "POST" })
 
     await supabase
       .from("channels")
-      .update({ connected: check.ok, account_label: check.ok ? check.label ?? "" : "" })
+      .update({ connected: check.ok, account_label: check.ok ? check.label : "" })
       .eq("user_id", userId)
       .eq("channel", data.channel as NetworkChannel);
 
-    return { ok: check.ok, message: check.message ?? (check.ok ? "Connected." : "Those details were not accepted.") };
+    return { ok: check.ok, message: check.ok ? `Connected as ${check.label}.` : check.message };
   });
 
 /** Re-checks stored details against the network. */
@@ -397,20 +397,20 @@ export const testChannelConnection = createServerFn({ method: "POST" })
     await supabase
       .from("channel_credentials")
       .update({
-        account_label: check.ok ? check.label ?? null : null,
+        account_label: check.ok ? check.label : null,
         last_checked_at: new Date().toISOString(),
         last_check_ok: check.ok,
-        last_check_message: check.message ?? null,
+        last_check_message: check.ok ? null : check.message,
       })
       .eq("user_id", userId)
       .eq("channel", data.channel);
     await supabase
       .from("channels")
-      .update({ connected: check.ok, account_label: check.ok ? check.label ?? "" : "" })
+      .update({ connected: check.ok, account_label: check.ok ? check.label : "" })
       .eq("user_id", userId)
       .eq("channel", data.channel as NetworkChannel);
 
-    return { ok: check.ok, message: check.message ?? (check.ok ? "Connected." : "Those details were not accepted.") };
+    return { ok: check.ok, message: check.ok ? `Connected as ${check.label}.` : check.message };
   });
 
 /** Removes the stored details for one network. */
