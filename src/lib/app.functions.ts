@@ -281,23 +281,158 @@ export const runPipelineNow = createServerFn({ method: "POST" }).middleware([req
   },
 );
 
+const NETWORK_IDS = ["linkedin", "twitter", "tiktok", "facebook", "instagram"] as const;
+type NetworkChannel = Database["public"]["Enums"]["draft_channel"];
+
 /** Channel rows plus whether the account is actually linked for auto-posting. */
 export const getNetworkStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
   async ({ context }) => {
     const { supabase, userId } = context;
+
+    // Make sure every supported network has a row so the page can toggle it.
+    const { data: existing, error: existingError } = await supabase
+      .from("channels")
+      .select("*")
+      .eq("user_id", userId);
+    if (existingError) throw new Error(existingError.message);
+    const missing = NETWORK_IDS.filter((id) => !(existing ?? []).some((row) => row.channel === id));
+    if (missing.length > 0) {
+      const { error: insertError } = await supabase
+        .from("channels")
+        .insert(missing.map((channel) => ({ user_id: userId, channel: channel as NetworkChannel })));
+      if (insertError) throw new Error(insertError.message);
+    }
+
     const { data, error } = await supabase.from("channels").select("*").eq("user_id", userId).order("channel");
     if (error) throw new Error(error.message);
-    const rows = data ?? [];
-    const enriched = await Promise.all(
-      rows.map(async (row) => ({
+
+    const { data: creds, error: credsError } = await supabase
+      .from("channel_credentials")
+      .select("channel, credentials, account_label, last_checked_at, last_check_ok, last_check_message")
+      .eq("user_id", userId);
+    if (credsError) throw new Error(credsError.message);
+
+    return (data ?? []).map((row) => {
+      const cred = (creds ?? []).find((c) => c.channel === row.channel);
+      const values = (cred?.credentials as ChannelCredentials | null) ?? {};
+      const savedFields = Object.entries(values)
+        .filter(([, value]) => typeof value === "string" && value.length > 0)
+        .map(([key]) => key);
+      const linked = savedFields.length > 0 && cred?.last_check_ok !== false;
+      return {
         ...row,
-        linked: await isChannelConnected(supabase, userId, row.channel),
-        autoPost: await canAutoPost(supabase, userId, row.channel),
-      })),
-    );
-    return enriched;
+        linked,
+        autoPost: linked,
+        savedFields,
+        publicValues: Object.fromEntries(
+          Object.entries(values).filter(([key]) => !key.includes("token") && !key.includes("secret")),
+        ) as ChannelCredentials,
+        accountLabel: cred?.account_label ?? null,
+        lastCheckedAt: cred?.last_checked_at ?? null,
+        lastCheckOk: cred?.last_check_ok ?? null,
+        lastCheckMessage: cred?.last_check_message ?? null,
+      };
+    });
   },
 );
+
+const credentialsInput = z.object({
+  channel: z.enum(NETWORK_IDS),
+  credentials: z.record(z.string(), z.string()),
+});
+
+/** Saves the pasted details for one network, verifying them against the network first. */
+export const saveChannelCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => credentialsInput.parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+
+    // Keep any existing values the user didn't retype (e.g. an unchanged token).
+    const existing = (await getChannelCredentials(supabase, userId, data.channel)) ?? {};
+    const merged: ChannelCredentials = { ...existing };
+    for (const [key, value] of Object.entries(data.credentials)) {
+      const trimmed = value.trim();
+      if (trimmed) merged[key] = trimmed;
+      else delete merged[key];
+    }
+    if (Object.keys(merged).length === 0) throw new Error("Fill in the details before saving.");
+
+    const check = await checkChannelCredentials(data.channel, merged);
+
+    const { error } = await supabase.from("channel_credentials").upsert(
+      {
+        user_id: userId,
+        channel: data.channel,
+        credentials: merged,
+        account_label: check.ok ? check.label ?? null : null,
+        last_checked_at: new Date().toISOString(),
+        last_check_ok: check.ok,
+        last_check_message: check.message ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,channel" },
+    );
+    if (error) throw new Error(error.message);
+
+    await supabase
+      .from("channels")
+      .update({ connected: check.ok, account_label: check.ok ? check.label ?? "" : "" })
+      .eq("user_id", userId)
+      .eq("channel", data.channel as NetworkChannel);
+
+    return { ok: check.ok, message: check.message ?? (check.ok ? "Connected." : "Those details were not accepted.") };
+  });
+
+/** Re-checks stored details against the network. */
+export const testChannelConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ channel: z.enum(NETWORK_IDS) }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const creds = await getChannelCredentials(supabase, userId, data.channel);
+    if (!creds || Object.keys(creds).length === 0) throw new Error("Add your details for this network first.");
+
+    const check = await checkChannelCredentials(data.channel, creds);
+    await supabase
+      .from("channel_credentials")
+      .update({
+        account_label: check.ok ? check.label ?? null : null,
+        last_checked_at: new Date().toISOString(),
+        last_check_ok: check.ok,
+        last_check_message: check.message ?? null,
+      })
+      .eq("user_id", userId)
+      .eq("channel", data.channel);
+    await supabase
+      .from("channels")
+      .update({ connected: check.ok, account_label: check.ok ? check.label ?? "" : "" })
+      .eq("user_id", userId)
+      .eq("channel", data.channel as NetworkChannel);
+
+    return { ok: check.ok, message: check.message ?? (check.ok ? "Connected." : "Those details were not accepted.") };
+  });
+
+/** Removes the stored details for one network. */
+export const disconnectChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ channel: z.enum(NETWORK_IDS) }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("channel_credentials")
+      .delete()
+      .eq("user_id", userId)
+      .eq("channel", data.channel);
+    if (error) throw new Error(error.message);
+    await supabase
+      .from("channels")
+      .update({ connected: false, account_label: "" })
+      .eq("user_id", userId)
+      .eq("channel", data.channel as NetworkChannel);
+    return { ok: true };
+  });
+
 
 /** Newest generated posts for the dashboard feed. */
 export const getRecentDrafts = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
