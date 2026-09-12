@@ -288,11 +288,14 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .single();
     if (error || !draft) throw new Error("Draft not found.");
-    if (!draft.video_script) throw new Error("This post has no video script to film.");
+    // Every network can get a clip: use the written video script when the post has
+    // one, otherwise film the post text itself.
+    const script = draft.video_script?.trim() || draft.body;
+    if (!script) throw new Error("This post has no text to turn into a clip.");
 
     await supabase.from("drafts").update({ video_status: "generating" }).eq("id", draft.id).eq("user_id", userId);
 
-    const result = await generateClip(draft.video_script, `${userId}/${draft.id}.mp4`);
+    const result = await generateClip(script, `${userId}/${draft.id}.mp4`);
     if (!result.ok) {
       await supabase
         .from("drafts")
@@ -342,7 +345,11 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
       return { ok: true, message: `Clip is ready, but posting failed: ${posted.message}`, url: result.url };
     }
 
-    return { ok: true, message: "Clip is ready. Approve the post to send it out.", url: result.url };
+    return {
+      ok: true,
+      message: `Clip is ready. ${draft.channel} has no linked account here, so download it and post it yourself.`,
+      url: result.url,
+    };
   });
 
 /**

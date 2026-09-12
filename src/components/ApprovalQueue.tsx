@@ -94,11 +94,21 @@ export function ApprovalQueue() {
               )}
 
               {draft.video_url && (
-                <video
-                  src={draft.video_url}
-                  controls
-                  className="mt-3 max-h-72 w-full rounded-md bg-muted"
-                />
+                <>
+                  <video
+                    src={draft.video_url}
+                    controls
+                    className="mt-3 max-h-72 w-full rounded-md bg-muted"
+                  />
+                  <a
+                    href={draft.video_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block text-xs text-primary hover:underline"
+                  >
+                    Download clip
+                  </a>
+                </>
               )}
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -151,7 +161,7 @@ export function ApprovalQueue() {
                     >
                       <X className="h-4 w-4" /> Reject
                     </Button>
-                    {draft.video_script && !draft.video_url && (
+                    {!draft.video_url && (
                       <Button
                         size="sm"
                         variant="outline"

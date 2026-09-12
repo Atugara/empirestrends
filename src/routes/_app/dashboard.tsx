@@ -155,6 +155,17 @@ function DashboardPage() {
               {draft.hashtags.length > 0 && (
                 <p className="mt-2 text-xs text-primary">{draft.hashtags.map((h) => `#${h}`).join(" ")}</p>
               )}
+              {draft.external_url && (
+                <a
+                  href={draft.external_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block text-xs text-primary hover:underline"
+                >
+                  View live post
+                </a>
+              )}
+              {draft.error && <p className="mt-2 text-xs text-destructive">{draft.error}</p>}
             </div>
           ))}
         </CardContent>
