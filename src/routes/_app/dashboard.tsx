@@ -9,6 +9,7 @@ import { getDashboardStats, runPipelineNow, getRecentDrafts } from "@/lib/app.fu
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ApprovalQueue } from "@/components/ApprovalQueue";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
