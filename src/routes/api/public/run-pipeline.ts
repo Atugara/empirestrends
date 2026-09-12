@@ -5,12 +5,24 @@ export const Route = createFileRoute("/api/public/run-pipeline")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
         const secret = request.headers.get("x-cron-secret");
-        if (!secret || secret !== process.env["CRON_SECRET"]) {
+        const token = request.headers.get("x-cron-token");
+
+        let authorized = Boolean(secret && secret === process.env["CRON_SECRET"]);
+        if (!authorized && token) {
+          const { data: match } = await supabaseAdmin
+            .from("cron_tokens")
+            .select("id")
+            .eq("token", token)
+            .maybeSingle();
+          authorized = Boolean(match);
+        }
+        if (!authorized) {
           return new Response("Unauthorized", { status: 401 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const { data: users, error } = await supabaseAdmin
           .from("settings")

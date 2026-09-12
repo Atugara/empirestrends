@@ -262,3 +262,41 @@ export const getRecentDrafts = createServerFn({ method: "GET" }).middleware([req
     return data ?? [];
   },
 );
+
+/** Turns a draft's video script into a real short-form clip. */
+export const makeVideoForDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { generateClip } = await import("./video.server");
+
+    const { data: draft, error } = await supabase
+      .from("drafts")
+      .select("id, video_script, channel")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .single();
+    if (error || !draft) throw new Error("Draft not found.");
+    if (!draft.video_script) throw new Error("This post has no video script to film.");
+
+    await supabase.from("drafts").update({ video_status: "generating" }).eq("id", draft.id).eq("user_id", userId);
+
+    const result = await generateClip(draft.video_script, `${userId}/${draft.id}.mp4`);
+    if (!result.ok) {
+      await supabase
+        .from("drafts")
+        .update({ video_status: "failed", error: result.message })
+        .eq("id", draft.id)
+        .eq("user_id", userId);
+      throw new Error(result.message);
+    }
+
+    await supabase
+      .from("drafts")
+      .update({ video_status: "ready", video_url: result.url, error: null })
+      .eq("id", draft.id)
+      .eq("user_id", userId);
+
+    return { ok: true, message: "Clip is ready.", url: result.url };
+  });

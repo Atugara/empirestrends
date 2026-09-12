@@ -9,6 +9,7 @@ import { getDashboardStats, runPipelineNow, getRecentDrafts } from "@/lib/app.fu
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ApprovalQueue } from "@/components/ApprovalQueue";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -113,6 +114,8 @@ function DashboardPage() {
         </CardContent>
       </Card>
 
+      <ApprovalQueue />
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Latest generated posts</CardTitle>
@@ -144,6 +147,9 @@ function DashboardPage() {
                 <p className="mt-2 whitespace-pre-wrap rounded bg-muted/40 p-2 text-xs text-muted-foreground">
                   {draft.video_script}
                 </p>
+              )}
+              {draft.video_url && (
+                <video src={draft.video_url} controls className="mt-3 max-h-72 w-full rounded-md bg-muted" />
               )}
               {draft.hashtags.length > 0 && (
                 <p className="mt-2 text-xs text-primary">{draft.hashtags.map((h) => `#${h}`).join(" ")}</p>

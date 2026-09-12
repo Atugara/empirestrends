@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          token?: string
+        }
+        Relationships: []
+      }
       drafts: {
         Row: {
           body: string
@@ -60,6 +81,8 @@ export type Database = {
           updated_at: string
           user_id: string
           video_script: string | null
+          video_status: string
+          video_url: string | null
         }
         Insert: {
           body?: string
@@ -76,6 +99,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_script?: string | null
+          video_status?: string
+          video_url?: string | null
         }
         Update: {
           body?: string
@@ -92,6 +117,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_script?: string | null
+          video_status?: string
+          video_url?: string | null
         }
         Relationships: [
           {
