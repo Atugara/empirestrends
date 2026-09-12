@@ -2,11 +2,11 @@
 // the rest stay copy-and-paste until an account can be linked.
 
 export type PublishResult =
-  | { ok: true; url?: string; externalId?: string; note?: string }
+  | { ok: true; url?: string | undefined; externalId?: string | undefined; note?: string | undefined }
   | { ok: false; message: string };
 
 export type MetricsResult =
-  | { ok: true; likes: number; shares: number; comments: number; impressions: number; note?: string }
+  | { ok: true; likes: number; shares: number; comments: number; impressions: number; note?: string | undefined }
   | { ok: false; message: string };
 
 const GATEWAY = "https://connector-gateway.lovable.dev";
