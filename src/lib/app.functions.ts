@@ -144,8 +144,10 @@ export const publishDraft = createServerFn({ method: "POST" })
     const { data: draft, error } = await supabase.from("drafts").select("*").eq("id", data.id).eq("user_id", userId).single();
     if (error || !draft) throw new Error("Draft not found.");
 
-    const result = await publishToChannel(draft.channel, draft.body, draft.video_url);
+    const creds = await getChannelCredentials(supabase, userId, draft.channel);
+    const result = await publishToChannel(draft.channel, creds, draft.body, draft.video_url);
     if (result.ok) {
+
       const now = new Date().toISOString();
       await supabase
         .from("drafts")
