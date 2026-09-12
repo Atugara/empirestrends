@@ -345,7 +345,11 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
       return { ok: true, message: `Clip is ready, but posting failed: ${posted.message}`, url: result.url };
     }
 
-    return { ok: true, message: "Clip is ready. Approve the post to send it out.", url: result.url };
+    return {
+      ok: true,
+      message: `Clip is ready. ${draft.channel} has no linked account here, so download it and post it yourself.`,
+      url: result.url,
+    };
   });
 
 /**

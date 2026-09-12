@@ -151,7 +151,7 @@ export function ApprovalQueue() {
                     >
                       <X className="h-4 w-4" /> Reject
                     </Button>
-                    {draft.video_script && !draft.video_url && (
+                    {!draft.video_url && (
                       <Button
                         size="sm"
                         variant="outline"
