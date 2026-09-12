@@ -11,6 +11,8 @@ import {
   Flame,
   Palette,
   Link2,
+  BarChart3,
+
 
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +32,7 @@ const nav = [
   { to: "/review", label: "Review", icon: ClipboardCheck },
   { to: "/schedule", label: "Schedule", icon: CalendarClock },
   { to: "/published", label: "Published", icon: CheckCircle },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/style-guide", label: "Style guide", icon: Palette },
   { to: "/connections", label: "Connections", icon: Link2 },
   { to: "/settings", label: "Settings", icon: Settings },
