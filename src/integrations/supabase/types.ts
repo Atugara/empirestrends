@@ -71,6 +71,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["draft_channel"]
           created_at: string
           error: string | null
+          external_id: string | null
           external_url: string | null
           hashtags: string[]
           id: string
@@ -89,6 +90,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["draft_channel"]
           created_at?: string
           error?: string | null
+          external_id?: string | null
           external_url?: string | null
           hashtags?: string[]
           id?: string
@@ -107,6 +109,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["draft_channel"]
           created_at?: string
           error?: string | null
+          external_id?: string | null
           external_url?: string | null
           hashtags?: string[]
           id?: string
@@ -168,6 +171,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      post_metrics: {
+        Row: {
+          channel: Database["public"]["Enums"]["draft_channel"]
+          comments: number
+          draft_id: string
+          fetched_at: string
+          id: string
+          impressions: number
+          likes: number
+          note: string
+          shares: number
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["draft_channel"]
+          comments?: number
+          draft_id: string
+          fetched_at?: string
+          id?: string
+          impressions?: number
+          likes?: number
+          note?: string
+          shares?: number
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["draft_channel"]
+          comments?: number
+          draft_id?: string
+          fetched_at?: string
+          id?: string
+          impressions?: number
+          likes?: number
+          note?: string
+          shares?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_metrics_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: true
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       publish_log: {
         Row: {
