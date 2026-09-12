@@ -38,7 +38,7 @@ export function ApprovalQueue() {
 
   const video = useMutation({
     mutationFn: makeVideo,
-    onSuccess: (result) => {
+    onSuccess: (result: { message: string }) => {
       toast.success(result.message);
       refresh();
     },
