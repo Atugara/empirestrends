@@ -21,15 +21,22 @@ async function getChannelCredentials(supabase: Client, userId: string, channel: 
 }
 
 async function isChannelConnected(supabase: Client, userId: string, channel: string): Promise<boolean> {
-  const creds = await getChannelCredentials(supabase, userId, channel);
-  if (!creds) return false;
-  const check = await checkChannelCredentials(channel, creds);
-  return check.ok;
+  const { data, error } = await supabase
+    .from("channel_credentials")
+    .select("last_check_ok, credentials")
+    .eq("user_id", userId)
+    .eq("channel", channel)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return false;
+  const creds = (data.credentials as ChannelCredentials | null) ?? {};
+  return Object.keys(creds).length > 0 && data.last_check_ok !== false;
 }
 
 async function canAutoPost(supabase: Client, userId: string, channel: string): Promise<boolean> {
   return isChannelConnected(supabase, userId, channel);
 }
+
 
 
 
