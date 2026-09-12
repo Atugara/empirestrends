@@ -346,9 +346,11 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
       .eq("user_id", userId);
 
     // Video networks with a linked account get the finished clip posted for them.
-    if (canAutoPost(draft.channel)) {
-      const posted = await publishToChannel(draft.channel, draft.body, result.url);
+    if (await canAutoPost(supabase, userId, draft.channel)) {
+      const creds = await getChannelCredentials(supabase, userId, draft.channel);
+      const posted = await publishToChannel(draft.channel, creds, draft.body, result.url);
       if (posted.ok) {
+
         await supabase
           .from("drafts")
           .update({
