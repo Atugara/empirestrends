@@ -278,11 +278,15 @@ export const getNetworkStatus = createServerFn({ method: "GET" }).middleware([re
     const { supabase, userId } = context;
     const { data, error } = await supabase.from("channels").select("*").eq("user_id", userId).order("channel");
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => ({
-      ...row,
-      linked: isChannelConnected(row.channel),
-      autoPost: canAutoPost(row.channel),
-    }));
+    const rows = data ?? [];
+    const enriched = await Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        linked: await isChannelConnected(supabase, userId, row.channel),
+        autoPost: await canAutoPost(supabase, userId, row.channel),
+      })),
+    );
+    return enriched;
   },
 );
 
