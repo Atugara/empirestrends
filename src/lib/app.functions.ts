@@ -535,7 +535,7 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
  * Shared by the approval queue and the retry button.
  */
 async function publishDraftRow(
-  supabase: SupabaseLike,
+  supabase: Client,
   userId: string,
   draft: { id: string; channel: NetworkChannel; body: string; video_url: string | null },
 ) {
