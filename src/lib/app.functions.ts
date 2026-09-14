@@ -531,6 +531,71 @@ export const makeVideoForDraft = createServerFn({ method: "POST" })
   });
 
 /**
+ * Publishes one already-owned draft to its network and records the outcome.
+ * Shared by the approval queue and the retry button.
+ */
+async function publishDraftRow(
+  supabase: SupabaseLike,
+  userId: string,
+  draft: { id: string; channel: NetworkChannel; body: string; video_url: string | null },
+) {
+  if (!(await canAutoPost(supabase, userId, draft.channel))) {
+    return {
+      ok: true,
+      published: false,
+      message: `Approved. ${draft.channel} has no linked account, so copy it across yourself.`,
+      url: null as string | null,
+    };
+  }
+
+  const creds = await getChannelCredentials(supabase, userId, draft.channel);
+  const result = await publishToChannel(draft.channel, creds, draft.body, draft.video_url);
+  const now = new Date().toISOString();
+
+  if (!result.ok) {
+    await supabase
+      .from("drafts")
+      .update({ status: "failed", error: result.message })
+      .eq("id", draft.id)
+      .eq("user_id", userId);
+    await supabase.from("publish_log").insert({
+      user_id: userId,
+      draft_id: draft.id,
+      channel: draft.channel,
+      status: "failed",
+      message: result.message,
+    });
+    return { ok: false, published: false, message: result.message, url: null as string | null };
+  }
+
+  await supabase
+    .from("drafts")
+    .update({
+      status: "published",
+      published_at: now,
+      external_url: result.url ?? null,
+      external_id: result.externalId ?? null,
+      error: null,
+    })
+    .eq("id", draft.id)
+    .eq("user_id", userId);
+  await supabase.from("publish_log").insert({
+    user_id: userId,
+    draft_id: draft.id,
+    channel: draft.channel,
+    status: "published",
+    message: result.note ?? (result.url ? `Published: ${result.url}` : "Published successfully."),
+  });
+
+  return {
+    ok: true,
+    published: true,
+    message: result.note ?? `Posted to ${draft.channel}.`,
+    url: result.url ?? null,
+  };
+}
+
+/**
  * Approves a post and publishes it straight away when its account is linked.
  * Networks without a sign-in stay approved so they can be copied out by hand.
  */
@@ -548,62 +613,50 @@ export const approveDraft = createServerFn({ method: "POST" })
     if (error || !draft) throw new Error("Draft not found.");
 
     await supabase.from("drafts").update({ status: "approved" }).eq("id", draft.id).eq("user_id", userId);
-
-    if (!(await canAutoPost(supabase, userId, draft.channel))) {
-      return {
-        ok: true,
-        published: false,
-        message: `Approved. ${draft.channel} has no linked account, so copy it across yourself.`,
-      };
-    }
-
-    const creds = await getChannelCredentials(supabase, userId, draft.channel);
-    const result = await publishToChannel(draft.channel, creds, draft.body, draft.video_url);
-    const now = new Date().toISOString();
-
-
-    if (!result.ok) {
-      await supabase
-        .from("drafts")
-        .update({ status: "failed", error: result.message })
-        .eq("id", draft.id)
-        .eq("user_id", userId);
-      await supabase.from("publish_log").insert({
-        user_id: userId,
-        draft_id: draft.id,
-        channel: draft.channel,
-        status: "failed",
-        message: result.message,
-      });
-      return { ok: false, published: false, message: result.message };
-    }
-
-    await supabase
-      .from("drafts")
-      .update({
-        status: "published",
-        published_at: now,
-        external_url: result.url ?? null,
-        external_id: result.externalId ?? null,
-        error: null,
-      })
-      .eq("id", draft.id)
-      .eq("user_id", userId);
-    await supabase.from("publish_log").insert({
-      user_id: userId,
-      draft_id: draft.id,
-      channel: draft.channel,
-      status: "published",
-      message: result.note ?? (result.url ? `Published: ${result.url}` : "Published successfully."),
-    });
-
-    return {
-      ok: true,
-      published: true,
-      message: result.note ?? `Posted to ${draft.channel}.`,
-      url: result.url ?? null,
-    };
+    return publishDraftRow(supabase, userId, draft);
   });
+
+/** Tries a failed or approved-but-unsent post again. */
+export const retryPublish = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: draft, error } = await supabase
+      .from("drafts")
+      .select("*")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .single();
+    if (error || !draft) throw new Error("Draft not found.");
+    if (draft.status === "published") return { ok: true, published: true, message: "Already posted.", url: draft.external_url };
+    return publishDraftRow(supabase, userId, draft);
+  });
+
+/** Publishing status for the dashboard: counts plus the newest sent/failed posts. */
+export const getPostStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
+  async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("drafts")
+      .select("id, channel, body, status, error, external_url, published_at, updated_at")
+      .eq("user_id", userId)
+      .in("status", ["published", "failed", "approved"])
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+
+    const rows = data ?? [];
+    return {
+      counts: {
+        published: rows.filter((row) => row.status === "published").length,
+        failed: rows.filter((row) => row.status === "failed").length,
+        awaiting: rows.filter((row) => row.status === "approved").length,
+      },
+      posts: rows,
+    };
+  },
+);
 
 /** Published posts with their latest saved likes, shares and comments. */
 export const getAnalytics = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
