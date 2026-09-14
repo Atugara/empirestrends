@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApprovalQueue } from "@/components/ApprovalQueue";
+import { PostStatus } from "@/components/PostStatus";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
