@@ -118,6 +118,9 @@ function DashboardPage() {
 
       <ApprovalQueue />
 
+      <PostStatus />
+
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Latest generated posts</CardTitle>
