@@ -44,6 +44,7 @@ export function ApprovalQueue() {
       else toast.error(result.message);
       refresh();
       queryClient.invalidateQueries({ queryKey: ["publish-log"] });
+      queryClient.invalidateQueries({ queryKey: ["post-status"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
     onError: (error: Error) => toast.error(error.message),
