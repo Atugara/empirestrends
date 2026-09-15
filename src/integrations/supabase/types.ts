@@ -355,6 +355,7 @@ export type Database = {
           discovered_at: string
           generated: boolean
           id: string
+          published_at: string
           score: number
           source_name: string
           source_url: string
@@ -369,6 +370,7 @@ export type Database = {
           discovered_at?: string
           generated?: boolean
           id?: string
+          published_at?: string
           score?: number
           source_name?: string
           source_url?: string
@@ -383,6 +385,7 @@ export type Database = {
           discovered_at?: string
           generated?: boolean
           id?: string
+          published_at?: string
           score?: number
           source_name?: string
           source_url?: string
