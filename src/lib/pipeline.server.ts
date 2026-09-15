@@ -63,6 +63,8 @@ async function closeRun(
     .eq("id", runId);
 }
 
+const FRESH_WINDOW_HOURS = 48;
+
 export async function discoverTopics(supabase: Client, userId: string): Promise<number> {
   const settings = await getSettings(supabase, userId);
   const items = await fetchTrending(settings.categories ?? ["general"]);
