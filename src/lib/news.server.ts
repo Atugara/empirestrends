@@ -90,9 +90,24 @@ function parseDate(block: string): number | null {
   return Number.isNaN(time) ? null : time;
 }
 
+const SOURCE_NAMES: Record<string, string> = {
+  "moxie.foxnews.com": "Fox News",
+  "feeds.bbci.co.uk": "BBC News",
+  "www.reddit.com": "Reddit",
+  "hnrss.org": "Hacker News",
+  "techcrunch.com": "TechCrunch",
+  "variety.com": "Variety",
+  "www.espn.com": "ESPN",
+  "news.google.com": "Google News",
+};
+
 function hostLabel(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, "").split(".")[0]!.replace(/^./, (c) => c.toUpperCase());
+    const host = new URL(url).hostname;
+    return (
+      SOURCE_NAMES[host] ??
+      host.replace(/^www\./, "").split(".")[0]!.replace(/^./, (c) => c.toUpperCase())
+    );
   } catch {
     return "News";
   }
