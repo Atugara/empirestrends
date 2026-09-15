@@ -1,14 +1,18 @@
-# Welcome to your Lovable project
+# Remix of Remix of R ChukwuemezieBOT
+
+Build an automated news discovery and social media publishing bot app. The platform should scan for daily trending topics and news, generate engaging and humorous content adaptations (both text posts and short-form video prompts/scripts), manage scheduled automation workflows, and include integrations and settings for connecting and auto-posting directly to social media accounts with a dashboard to review, edit, and monitor published posts and pipeline status.
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://empirestrends.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/f515aad4-8d5e-43db-b7f8-3073a2bebbfa).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +24,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
