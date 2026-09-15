@@ -165,13 +165,29 @@ export async function runPipeline(
   try {
     topicsFound = await discoverTopics(supabase, userId);
 
-    const { data: pending } = await supabase
+    const freshSince = new Date(Date.now() - FRESH_WINDOW_HOURS * 3_600_000).toISOString();
+
+    let { data: pending } = await supabase
       .from("topics")
       .select("id")
       .eq("user_id", userId)
       .eq("generated", false)
+      .gte("published_at", freshSince)
+      .order("published_at", { ascending: false })
       .order("score", { ascending: false })
       .limit(batchSize);
+
+    // Fall back to the highest-scoring unused stories if nothing fresh came in.
+    if (!pending || pending.length === 0) {
+      const fallback = await supabase
+        .from("topics")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("generated", false)
+        .order("score", { ascending: false })
+        .limit(batchSize);
+      pending = fallback.data;
+    }
 
     for (const topic of pending ?? []) {
       draftsCreated += await generateForTopic(supabase, userId, topic.id);
