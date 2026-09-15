@@ -55,6 +55,8 @@ function decode(value: string): string {
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/\s+/g, " ")
@@ -88,6 +90,14 @@ function parseDate(block: string): number | null {
   return Number.isNaN(time) ? null : time;
 }
 
+function hostLabel(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "").split(".")[0]!.replace(/^./, (c) => c.toUpperCase());
+  } catch {
+    return "News";
+  }
+}
+
 async function readFeed(category: string, url: string, limit: number): Promise<TrendItem[]> {
   const response = await fetch(url, {
     headers: {
@@ -110,7 +120,7 @@ async function readFeed(category: string, url: string, limit: number): Promise<T
     const ageHours = published ? (now - published) / 3_600_000 : 0;
     if (published && (ageHours > MAX_AGE_HOURS || ageHours < -2)) continue;
 
-    const source = pick(block, "source") || rawTitle.split(" - ").pop() || "News";
+    const source = pick(block, "source") || hostLabel(url);
     const title = rawTitle.replace(new RegExp(`\\s*-\\s*${source}$`), "").trim() || rawTitle;
     const summary = (pick(block, "description") || pick(block, "content")).slice(0, 400);
 
